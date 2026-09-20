@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>⚡ REGA DIGITAL ALLIANCE</h1>
+  <h1>⚡ Upscaler Image Scraping</h1>
   <p><strong>Integrated AI Product Engineering & Digital Intelligence System</strong><br><em>Architected & Owned by ArkRega</em></p>
   <p><code>Idea</code> ➔ <code>Product</code> ➔ <code>Engineering</code> ➔ <code>Security</code> ➔ <code>Deployment</code> ➔ <code>Iteration</code></p>
   
