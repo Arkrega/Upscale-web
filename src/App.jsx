@@ -1,85 +1,127 @@
 import React, { useState, useRef, useEffect } from "react";
 
-export default function App() {
-  const [file, setFile] = useState(null);
-  const [preview, setPreview] = useState(null);
-  const [scale, setScale] = useState("4");
-  const [model, setModel] = useState("anime");
-  const [denoise, setDenoise] = useState(35);
-  const [sharpness, setSharpness] = useState(70);
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState(null);
-  const [error, setError] = useState(null);
+const INITIAL_SHOWCASES = [
+  {
+    id: 1,
+    category: "anime",
+    title: "Sakura Blossom Maiden",
+    author: "@mikan_art",
+    resBefore: "480 × 270 px",
+    resAfter: "1920 × 1080 px",
+    badgeAfter: "4x Bloom Sharp",
+    badgeBefore: "Original (Blurry)",
+    tagModel: "4x Anime Sharp",
+    modelName: "Model: RealESRGAN-Anime6B",
+    multiplier: "16x Pixel Multiplier",
+    likes: 184,
+    upscaledUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuCGUcLAGXann4HyeGMVySbQQzg19-Ofy1m7o4JVyX86gLHZ-4Acove4r8RNlsa1AYHExzzlC1fA9iqlGWtiXQnnbjL9wtoUW4nG3qFZDKzpB2fJYc_aiHpLptICNQqvemCRNI4fbQphGV9CD7ZILn8M_5ICEqgyi3AcmAHx_J1KN2fjsBdDmo6SCE2qrQi2ZVIVY875NXv2P6xvt3FIaVcb4ZJmkfwCZNprGsZSE2zF4Q1ZHSShlHE-",
+    originalUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuDiKOux2yweVNMmUw-wzmocBnN1geRXdp-XAVMcfmGYJ-Jx9wgLt_oIInBu0fXIO95p_GfSywgcfGz1cwPtwQaKnGUYldyPiqZk29VUDRxzXhlgwSICk_H_YxLoaGErmegWVImRDc7SiNJTYB3aoyfAbiuvdQxdBig3oa6UWdKq56MAM4ltweWJ8xZFi0Pv46JFodgIIuF5tIW0Wj-xxsJDf8mT7HKZf0h7mzaJzsc0YYcmdjsQSmAz",
+  },
+  {
+    id: 2,
+    category: "pixel-art",
+    title: "Cozy Fantasy Inn (16-Bit)",
+    author: "@kenji_dev",
+    resBefore: "128 × 128 px",
+    resAfter: "1024 × 1024 px",
+    badgeAfter: "8x Pixel Pure",
+    badgeBefore: "Original (Blurry Stretch)",
+    tagModel: "8x Pixel Crisp",
+    modelName: "Model: OmniPixel Edge v2",
+    multiplier: "Zero Color Smear",
+    likes: 249,
+    upscaledUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuDbqq1Ox39sCYsf_YfhoA7gEGswEV8NhKwLY7ZLL7Hp_CRavjahyAS_mCxTQ52ohwWq-EKWLm0BpCmcGkVONuM2kdlfSuq15nxc0kt3sIqE1-ghlPz9luwGJiiYOr3SsYx2-HKK1gB4nuhXpwvu6pWk-FjiJcsSfzE0-nyHTkGRj0y70TVIOlcTDVt1Sg0B7RynYIwPs5lBPLM_BYrTQGq-iUOtcdFm589L7OlXgsIrU6clSMhfQg6C",
+    originalUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuDI5SMeBTqS_5ywd00oxv4zVTNFjeRoAMxkQvvfR8Y7gFau699fnHeWxPil-X8orQeGtWOYP_l-tpCbBBCW9txzVK-PKNiovsucMFG_vheDW_kVgFXu_wJUnlr0IQLNwP3C8hFumvKirP5ypCjOIqFc57nGVUdXiYdIXTk6Cxei20xeuMXXZPZWb3-0li1Sq0pPzOi0wBbbQDdjjy7K36dCscJ9bGT2PIW5KTgF-EreONG8P68cBEig",
+  },
+  {
+    id: 3,
+    category: "vintage",
+    title: "Grandmother's 1942 Portrait",
+    author: "@clara_archives",
+    resBefore: "400 × 520 px",
+    resAfter: "1600 × 2080 px",
+    badgeAfter: "4x Vintage Face Restore",
+    badgeBefore: "Original (Damaged Film)",
+    tagModel: "4x Heritage Denoise",
+    modelName: "Model: GFPGAN-v1.4",
+    multiplier: "Eye & Skin Synthesis",
+    likes: 312,
+    upscaledUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuDwolARA4flQSZAMIIu6RP21QT06Iq8IXdbuS9jGbd5YiqzRONwQoctcvmCBdx_dzS60mrpMM1JjFERsiZbDqDXcd-APO5X1Pe428Zo6sYR6W29SjxwI7vWCydcS6rlAW4ZsRTqOv_yQmbj3982qL-qc12sBUvr_Lb-cV5RXZtHqkKekBe52r5Y-X1Qgupr3wchb_F0sWRToRpc-Tchn98yzIcA5uCWZYLFol8cJsH4Y4AdONtjcKS0",
+    originalUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuA94yWCJ08nEZ9h28a1JU7hSJ0m11K31z4ONs20vjt2NjnLGeE5Dms6GziKSDtfQG97wdB9AAabxd0wFocCTz2O-IMEM2O_027BvzZi2bWUb31DqeQDJgYS9buq3tb4leuG0ZN-RTI6AcLSCU8ZvhzHzmGIdbAFVE2YgS_HFhgPFwEgAOOpCtiwHew-UYn3Y3a4QuuHD24_zOOD2dEjLXE1_OGa6wOEnNl9Ki0JPkbCr3jEo-LCG2eL",
+  },
+  {
+    id: 4,
+    category: "nature",
+    title: "Misty Fern Dewdrop Macro",
+    author: "@mossy_lens",
+    resBefore: "640 × 360 px",
+    resAfter: "2560 × 1440 px",
+    badgeAfter: "4x Macro Ultra",
+    badgeBefore: "Original (Low-res JPEG)",
+    tagModel: "4x Nature Texture",
+    modelName: "Model: HAT-Sharpen-L",
+    multiplier: "Fine Leaf Vein Recovery",
+    likes: 156,
+    upscaledUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuB_gBFNWcfzdSjudgWo1JbF84x_vKRPv1c5YezV-ZRc9vdgiVqpI-cwzdCPWxOM2nNkIDnozoLX1uvh4ZQdoFrXagNyfB-68yg9YeePXaywTpdCEtbZ3cc8GZT49vJgUauoaj9nqd3IUL_r1ZhTPM6We32jaSab8hqGo0O-9oYHkUSC8Ir22HaHRTDFbpoNQa2atJLrhjnFk50LzrztyxVdLImgf3nR7HR58JYZaWdie9N8ZSQWryGH",
+    originalUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuCeUyFkk-glTEFOTOP8I8PJDNwPduDbRL4aqgB0XLaqGiz3TjgBronZhxsThxt2AFdUwez-1_KI3-gK_W8TZu7iLtvo61SvCfNTikFuTr6rV3GX10yblyla50RYdck9v-1mYfCoTg6v561sxHHqxlDmY9O_ISpbLVQbYOEyAw9RTxXbZYZGESavleOSiDuWJCFnUJ2dbEznyX_Qzyed0gc0TuN2OWzKGt0GYKdv-VhM688B3qZKRQML",
+  },
+  {
+    id: 5,
+    category: "pixel-art",
+    title: "Neon Mage RPG Sprite",
+    author: "@bitcraft",
+    resBefore: "64 × 64 px",
+    resAfter: "512 × 512 px",
+    badgeAfter: "8x Grid Lock",
+    badgeBefore: "Original (Tiny Icon)",
+    tagModel: "8x Sprite Scale",
+    modelName: "Model: NearestPreserve AI",
+    multiplier: "Perfect Dithering",
+    likes: 420,
+    upscaledUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuBRPNZmJJoNS5NZ0mtEhjdZgJkRDHiVJVNd442g-_jl3bEOLF6v3GAy8xE93PwNUFl4rO6yOqpeTWNFmbandT9UfzyP527MIGjifoosW3ZwQEOLgZz96HgkNGTsA2zjjfxmrj4RIlq_BV1CEi1L71_0p4uKzfBZXQPmnned0vsLHt33vIw6HPxX7U8qVwv8NnJmfHinScQjg4o8hLwHQXg5v8O5nfxWa6ZuO1KO_gIWIx7FldhDfJKV",
+    originalUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuCxpVp96eBXrhg-MqdD1uIVDCDSH2vI94hvCZT81YKw0Pkkyp6i1tKWMODV_jbkqzBkAITkWVMPaWnYCcCCn2MMfvOxQu1lAFVOozWVsAGZEUGKG6Pr17Zw2FtAsoSdpLfjYK6dRZN7zSZrVAeHVspAMB1TbUYYa-wDR_3kzclzh1eu-CnN9xAT40JDooUuTkYXMhVL4-j3EDhZlx4lEAE0Y4W34QXg2cnQmxzaKIE4s9kxVzdFTfqE",
+  },
+  {
+    id: 6,
+    category: "vintage",
+    title: "1912 Venetian Dusk Postcard",
+    author: "@nostalgia_club",
+    resBefore: "500 × 330 px",
+    resAfter: "2000 × 1320 px",
+    badgeAfter: "4x Fine Art Brush",
+    badgeBefore: "Original (Halftone Print)",
+    tagModel: "4x Canvas Brush",
+    modelName: "Model: ScannedArt-ESRGAN",
+    multiplier: "Impasto Preservation",
+    likes: 198,
+    upscaledUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuCoKL3C55ZvGGzZ2U8cT8MJCg1yFkHwcZIyW9JqgluLeGcTbnBSJjJ14gR2Gu0Mmgz1RhQl_-m52ss8w5NHjlsc4LWm7bDyJ1u9jG3BaWW0JySw4vy8qE1pyV-Qejtc5NlORVmJj7_HEG3mA-2g5aLJCoGX181XrzYL3KX747an3h0KhtLeY1LwPEhgXissqmiuDL6DT8Pq9Ok87dIndF1C6EKCz6DUOoQMM3kdMFhlsbyGMYxWr_Up",
+    originalUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuBonrjZoLhyT2lTmHziKip-le5-KvUNUe6AOBHY-lFkPdiniIoLEpTaDYIUJ4Nr4v4_4zEgikbVJYH-lV_rY_Bib_B5Z46OcHzWHj219hnBIxQCWiq7v3rBZEvRIAUFBw5yV_sDzJFjogzoxF28NR4WSWmm3ggDXhq7--pcN8V0xMHJPsNVg0a5wdUfTuhFMKiybNRyoBe9kou5xKnI-npKH-_PUv15xQ6a1V7buN_jHxmUjPoJFxLF",
+  },
+];
 
+function SplitComparisonCard({ item }) {
   const [sliderPos, setSliderPos] = useState(50);
   const [isDragging, setIsDragging] = useState(false);
-  const sliderRef = useRef(null);
-  const fileInputRef = useRef(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+  const [liked, setLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(item.likes);
+  const containerRef = useRef(null);
 
-  const [selectedTip, setSelectedTip] = useState("$5");
-
-  const sampleDemoBefore = "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=400&auto=format&fit=crop&q=40";
-  const sampleDemoAfter = "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=1600&auto=format&fit=crop&q=95";
-
-  const handleFile = (selectedFile) => {
-    if (!selectedFile) return;
-    if (!selectedFile.type.startsWith("image/")) {
-      setError("Silakan pilih file gambar yang valid (PNG, JPG, WEBP).");
-      return;
-    }
-    setFile(selectedFile);
-    setPreview(URL.createObjectURL(selectedFile));
-    setResult(null);
-    setError(null);
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFile(e.dataTransfer.files[0]);
-    }
-  };
-
-  const handleUpscale = async () => {
-    if (!file) {
-      setError("Silakan pilih atau jatuhkan gambar terlebih dahulu.");
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    const formData = new FormData();
-    formData.append("image", file);
-    formData.append("scale", scale);
-
-    try {
-      const response = await fetch("/api/upscale", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || "Gagal memproses gambar melalui server.");
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const updateWidth = () => {
+      if (containerRef.current) {
+        setContainerWidth(containerRef.current.offsetWidth);
       }
+    };
+    updateWidth();
+    window.addEventListener("resize", updateWidth);
+    return () => window.removeEventListener("resize", updateWidth);
+  }, []);
 
-      setResult(data);
-      const comparisonElem = document.getElementById("comparison-section");
-      if (comparisonElem) {
-        comparisonElem.scrollIntoView({ behavior: "smooth" });
-      }
-    } catch (err) {
-      setError(err.message || "Terjadi kesalahan saat memproses gambar.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateSliderPos = (clientX) => {
-    if (!sliderRef.current) return;
-    const rect = sliderRef.current.getBoundingClientRect();
+  const updatePosition = (clientX) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
     let offsetX = clientX - rect.left;
     if (offsetX < 0) offsetX = 0;
     if (offsetX > rect.width) offsetX = rect.width;
@@ -88,21 +130,21 @@ export default function App() {
 
   const handleMouseDown = (e) => {
     setIsDragging(true);
-    updateSliderPos(e.clientX);
+    updatePosition(e.clientX);
   };
 
   const handleTouchStart = (e) => {
     setIsDragging(true);
-    updateSliderPos(e.touches[0].clientX);
+    updatePosition(e.touches[0].clientX);
   };
 
   useEffect(() => {
     const handleMouseUp = () => setIsDragging(false);
     const handleMouseMove = (e) => {
-      if (isDragging) updateSliderPos(e.clientX);
+      if (isDragging) updatePosition(e.clientX);
     };
     const handleTouchMove = (e) => {
-      if (isDragging) updateSliderPos(e.touches[0].clientX);
+      if (isDragging) updatePosition(e.touches[0].clientX);
     };
 
     window.addEventListener("mouseup", handleMouseUp);
@@ -118,673 +160,689 @@ export default function App() {
     };
   }, [isDragging]);
 
-  const handleCopy = async () => {
-    const targetUrl = result?.url || sampleDemoAfter;
-    try {
-      await navigator.clipboard.writeText(targetUrl);
-      alert("Tautan gambar berhasil disalin ke clipboard!");
-    } catch (err) {
-      console.error(err);
+  const toggleLike = () => {
+    if (liked) {
+      setLikeCount((prev) => prev - 1);
+      setLiked(false);
+    } else {
+      setLikeCount((prev) => prev + 1);
+      setLiked(true);
     }
   };
 
-  const handleReset = () => {
-    setFile(null);
-    setPreview(null);
-    setResult(null);
-    setError(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
+  return (
+    <article className="gallery-card group flex flex-col bg-surface-container-lowest rounded-lg shadow-sm hover:shadow-md transition-all overflow-hidden">
+      <div
+        ref={containerRef}
+        onMouseDown={handleMouseDown}
+        onTouchStart={handleTouchStart}
+        className="comparison-container relative w-full h-[360px] sm:h-[400px] overflow-hidden select-none bg-surface-container-high cursor-ew-resize"
+      >
+        <img
+          src={item.upscaledUrl}
+          alt={item.title}
+          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+        />
+        <div className="absolute top-4 right-4 z-10 px-space-sm py-1 rounded-full bg-surface-container-lowest/90 backdrop-blur-md text-primary font-label-sm text-label-sm shadow-sm">
+          {item.badgeAfter}
+        </div>
+
+        <div
+          className="comparison-before-wrapper absolute inset-0 overflow-hidden pointer-events-none"
+          style={{ width: `${sliderPos}%` }}
+        >
+          <img
+            src={item.originalUrl}
+            alt={`${item.title} original`}
+            style={{ width: containerWidth ? `${containerWidth}px` : "100%", maxWidth: "none" }}
+            className="comparison-before-img absolute top-0 left-0 h-full object-cover"
+          />
+          <div className="absolute top-4 left-4 z-10 px-space-sm py-1 rounded-full bg-inverse-surface/80 backdrop-blur-md text-inverse-on-surface font-label-sm text-label-sm">
+            {item.badgeBefore}
+          </div>
+        </div>
+
+        <div
+          className="comparison-handle absolute top-0 bottom-0 w-0.5 bg-surface-container-lowest shadow-xl pointer-events-none flex items-center justify-center -translate-x-1/2"
+          style={{ left: `${sliderPos}%` }}
+        >
+          <div className="w-9 h-9 rounded-full bg-primary-container text-on-primary flex items-center justify-center shadow-lg font-headline-sm scale-100 group-hover:scale-110 transition-transform">
+            <span className="material-symbols-outlined text-[18px]">drag_indicator</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="p-space-lg flex flex-col gap-space-sm bg-surface-container-lowest">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <span className="px-space-sm py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm font-bold">
+              {item.tagModel}
+            </span>
+            <span className="font-label-sm text-label-sm text-on-surface-variant">{item.modelName}</span>
+          </div>
+          <span className="font-body-sm text-body-sm text-tertiary flex items-center gap-1 font-semibold">
+            <span className="material-symbols-outlined text-[16px]">verified</span>
+            {item.multiplier}
+          </span>
+        </div>
+        <div className="flex items-center justify-between pt-space-xs">
+          <div>
+            <h3 className="font-headline-sm text-headline-sm text-on-surface font-bold">{item.title}</h3>
+            <p className="font-body-sm text-body-sm text-on-surface-variant">
+              Submitted by {item.author} • {item.resBefore} ➔ {item.resAfter}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={toggleLike}
+            className={`px-space-md py-space-xs rounded-full font-label-md text-label-md flex items-center gap-1 transition-all ${
+              liked
+                ? "bg-rose-100 text-rose-600 shadow-sm"
+                : "bg-surface-container-low hover:bg-surface-container text-on-surface"
+            }`}
+          >
+            <span className={`material-symbols-outlined text-[18px] ${liked ? "fill-current text-rose-600" : ""}`}>
+              favorite
+            </span>
+            <span>{likeCount}</span>
+          </button>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+export default function App() {
+  const [items, setItems] = useState(INITIAL_SHOWCASES);
+  const [filter, setFilter] = useState("all");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const [uploadFile, setUploadFile] = useState(null);
+  const [uploadPreview, setUploadPreview] = useState(null);
+  const [scale, setScale] = useState("4");
+  const [title, setTitle] = useState("");
+  const [artistHandle, setArtistHandle] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState(null);
+
+  const [selectedTip, setSelectedTip] = useState(5);
+  const [tipSuccess, setTipSuccess] = useState(false);
+
+  const modalFileInputRef = useRef(null);
+
+  const filteredItems = items.filter((item) => {
+    if (filter === "all") return true;
+    return item.category === filter;
+  });
+
+  const handleFileSelection = (file) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setUploadError("Pilih format gambar yang valid.");
+      return;
+    }
+    setUploadFile(file);
+    setUploadPreview(URL.createObjectURL(file));
+    setUploadError(null);
+  };
+
+  const handleModalSubmit = async (e) => {
+    e.preventDefault();
+    if (!uploadFile) {
+      setUploadError("Unggah berkas gambar terlebih dahulu.");
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadError(null);
+
+    const formData = new FormData();
+    formData.append("image", uploadFile);
+    formData.append("scale", scale);
+
+    try {
+      const response = await fetch("/api/upscale", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Gagal memproses gambar melalui server backend.");
+      }
+
+      const newItem = {
+        id: Date.now(),
+        category: "anime",
+        title: title.trim() || uploadFile.name,
+        author: artistHandle.trim() || "@creator",
+        resBefore: "Original Upload",
+        resAfter: `${scale}x Upscaled HD`,
+        badgeAfter: `${scale}x Bloom Sharp`,
+        badgeBefore: "Original Input",
+        tagModel: `${scale}x AI Engine`,
+        modelName: "Model: Edge AI Engine",
+        multiplier: `${scale}x Enhanced Output`,
+        likes: 1,
+        upscaledUrl: data.url,
+        originalUrl: uploadPreview,
+      };
+
+      setItems((prev) => [newItem, ...prev]);
+      setIsModalOpen(false);
+      setUploadFile(null);
+      setUploadPreview(null);
+      setTitle("");
+      setArtistHandle("");
+    } catch (err) {
+      setUploadError(err.message || "Terjadi kesalahan saat memproses gambar.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleSendCoffee = () => {
+    setTipSuccess(true);
+    setTimeout(() => {
+      setTipSuccess(false);
+    }, 2500);
   };
 
   return (
-    <div className="bg-surface font-sans text-on-surface antialiased min-h-screen selection:bg-primary-fixed selection:text-on-primary-fixed">
-      {/* Navigation Header */}
+    <div className="bg-surface font-body-md text-on-surface antialiased min-h-screen">
       <header className="fixed top-0 left-0 right-0 z-50 bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
         <div className="h-20 max-w-[1200px] mx-auto px-margin flex items-center justify-between">
           <div className="flex items-center gap-space-md">
-            <div className="flex items-center gap-space-sm cursor-pointer" onClick={handleReset}>
-              <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-primary to-primary-container flex items-center justify-center text-white font-black text-lg shadow-md shadow-primary/25">
-                🌸
-              </div>
-              <span className="text-xl tracking-tight text-on-surface font-extrabold">PixelBloom</span>
+            <div className="flex items-center gap-space-sm">
+              <img
+                alt="PixelBloom Logo"
+                className="h-8 w-auto object-contain"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDGoDgA2f_3KNhrlEzOVccMym3ATdO5JvQpOt3Lv8_Z-BEcZt3MS9RJDht4rPg501A-D8e8InqBKVUOXH-GtO5WmsZhDE9du2Lq55VGtQ7e4jOWnSBCBavWsC537YvU8Tqw25T7srU5sh1lXd-okK_L3OvCLtfRRngF7LJC_Fb27fEryMH2AJTa26DakGbKh_YqzItIApZmJWr_DfkcTTGjtwVL9Tod3ehNIN4LNRvDdtKxwl1yu5Qu"
+              />
+              <span className="font-headline-sm text-headline-sm tracking-tight text-on-surface font-extrabold">
+                PixelBloom
+              </span>
             </div>
-            <span className="hidden lg:inline-flex items-center px-space-sm py-0.5 rounded-full bg-surface-container-high text-primary text-xs font-bold">
-              Rega Digital Alliance • Free & Open
+            <span className="hidden lg:inline-flex items-center px-space-sm py-0.5 rounded-full bg-surface-container-high text-primary font-label-sm text-label-sm">
+              Hobby project ✨ Free forever
             </span>
           </div>
 
           <nav className="hidden md:flex items-center bg-surface-container-low p-1.5 rounded-full shadow-[0_1px_3px_0_rgba(31,41,55,0.04)]">
-            <a href="#tool-workspace" className="px-space-md py-space-xs transition-all bg-primary-fixed text-on-primary-fixed text-sm font-semibold rounded-full shadow-[0_2px_8px_rgba(31,41,55,0.08)]">
+            <button
+              type="button"
+              onClick={() => setIsModalOpen(true)}
+              className="px-space-md py-space-xs rounded-full text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high hover:text-on-surface transition-all"
+            >
               Upscaler
+            </button>
+            <a
+              href="#gallery-grid"
+              className="px-space-md py-space-xs transition-all bg-primary-fixed text-on-primary-fixed font-label-md text-label-md rounded-full shadow-[0_2px_8px_rgba(31,41,55,0.08)] font-bold"
+            >
+              Before &amp; After Gallery
             </a>
-            <a href="#comparison-section" className="px-space-md py-space-xs rounded-full text-on-surface-variant text-sm font-semibold hover:bg-surface-container-high hover:text-on-surface transition-all">
-              Before & After
-            </a>
-            <a href="#features" className="px-space-md py-space-xs rounded-full text-on-surface-variant text-sm font-semibold hover:bg-surface-container-high hover:text-on-surface transition-all">
+            <a
+              href="#how-it-works"
+              className="px-space-md py-space-xs rounded-full text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high hover:text-on-surface transition-all"
+            >
               How It Works
             </a>
-            <a href="#tip-jar" className="px-space-md py-space-xs rounded-full text-on-surface-variant text-sm font-semibold hover:bg-surface-container-high hover:text-on-surface transition-all">
-              Buy Me a Coffee
+            <a
+              href="#tip-jar"
+              className="px-space-md py-space-xs rounded-full text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high hover:text-on-surface transition-all"
+            >
+              Creator Note / Buy Me a Coffee
             </a>
           </nav>
 
           <div className="flex items-center gap-space-sm">
-            <div className="flex items-center gap-2 bg-surface-container-lowest px-3 py-1.5 rounded-full shadow-[0_1px_3px_0_rgba(31,41,55,0.04)] border border-surface-container-high">
-              <span className="text-xs font-semibold text-on-surface-variant">Active Edge Node</span>
-              <div className="w-2.5 h-2.5 rounded-full bg-tertiary-fixed-dim animate-pulse" />
+            <div className="hidden sm:flex items-center gap-space-xs bg-surface-container-lowest px-space-sm py-1 rounded-full shadow-[0_1px_3px_0_rgba(31,41,55,0.04)]">
+              <span className="font-label-sm text-label-sm text-on-surface-variant">Crafted by Alex</span>
+              <img
+                alt="Profile"
+                className="w-8 h-8 rounded-full object-cover"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBym9uL7LgnB_0Jr5_Yb0xwjN2cR-7oQvltMUYpH6jyBQzGACUPsnUHTF40odAyACC5xOP9zGs8mWw_8-r_tXZW1E9t8JlrcAx4Z4X74xTmbI8mTA2VzpmLrHFDlA-SzexNTLBX5ojlMi0-v_2mHE7FTEiJK6HLCbgcgvnMUZiLj3E1t6SdMIEdgYmfLQsVz6mRoUd8JYGvg5NGRdOjDamlznnvJdtPLK9a-nu-pvOU5fINmkqNUjq9"
+              />
+            </div>
+            <div className="sm:hidden">
+              <img
+                alt="Profile"
+                className="w-8 h-8 rounded-full object-cover"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBym9uL7LgnB_0Jr5_Yb0xwjN2cR-7oQvltMUYpH6jyBQzGACUPsnUHTF40odAyACC5xOP9zGs8mWw_8-r_tXZW1E9t8JlrcAx4Z4X74xTmbI8mTA2VzpmLrHFDlA-SzexNTLBX5ojlMi0-v_2mHE7FTEiJK6HLCbgcgvnMUZiLj3E1t6SdMIEdgYmfLQsVz6mRoUd8JYGvg5NGRdOjDamlznnvJdtPLK9a-nu-pvOU5fINmkqNUjq9"
+              />
             </div>
           </div>
         </div>
       </header>
 
-      {/* Main Container */}
-      <main className="w-full pt-28 bg-surface min-h-[calc(100vh-160px)]">
+      <main className="w-full pt-20 bg-surface min-h-[calc(100vh-160px)]">
         <div className="flex flex-col w-full">
-          {/* Ambient Glow Orbs */}
-          <div className="relative w-full max-w-[1200px] mx-auto px-margin overflow-hidden pointer-events-none">
-            <div className="absolute -top-16 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
-            <div className="absolute top-48 right-10 w-80 h-80 bg-secondary-container/15 rounded-full blur-3xl" />
-            <div className="absolute top-[600px] left-[-50px] w-72 h-72 bg-tertiary-fixed-dim/20 rounded-full blur-3xl" />
-          </div>
-
-          {/* Hero Section */}
-          <section className="w-full max-w-[1200px] mx-auto px-margin pt-space-lg pb-space-xl relative z-10">
-            <div className="flex flex-col items-center text-center max-w-3xl mx-auto">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-surface-container-high shadow-sm mb-space-md">
-                <span className="text-primary text-sm">✨</span>
-                <span className="text-xs text-primary font-bold tracking-wide">Personal Weekend Project • 100% Free & Open</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-tertiary" />
-                <span className="text-xs text-on-surface-variant font-medium">v1.2 live</span>
-              </div>
-
-              <h1 className="text-4xl md:text-6xl font-extrabold text-on-surface tracking-tight leading-tight mb-space-sm">
-                Make your blurry images <span className="bg-gradient-to-r from-primary via-primary-container to-secondary-container bg-clip-text text-transparent">crisp & gorgeous</span> in seconds.
-              </h1>
-
-              <p className="text-base md:text-lg text-on-surface-variant max-w-2xl mb-space-lg">
-                Trained on cozy anime art, vintage polaroids, and pixel assets. Hosted with high-speed automated upscaling. No logins, no forced watermarks, and never a paywall.
-              </p>
-
-              {/* Stat Badges */}
-              <div className="flex flex-wrap items-center justify-center gap-space-sm">
-                <div className="flex items-center gap-1.5 px-space-md py-1 rounded-full bg-surface-container-lowest shadow-sm text-on-surface border border-surface-container-high text-xs font-semibold">
-                  <span className="material-symbols-outlined text-[16px] text-primary">memory</span>
-                  <span>Real-ESRGAN + AnimeSharp</span>
-                </div>
-                <div className="flex items-center gap-1.5 px-space-md py-1 rounded-full bg-surface-container-lowest shadow-sm text-on-surface border border-surface-container-high text-xs font-semibold">
-                  <span className="material-symbols-outlined text-[16px] text-tertiary">bolt</span>
-                  <span>Edge Serverless Pipeline</span>
-                </div>
-                <div className="flex items-center gap-1.5 px-space-md py-1 rounded-full bg-surface-container-lowest shadow-sm text-on-surface border border-surface-container-high text-xs font-semibold">
-                  <span className="material-symbols-outlined text-[16px] text-secondary">cloud_done</span>
-                  <span>Up to 25MB file size</span>
-                </div>
-                <div className="flex items-center gap-1.5 px-space-md py-1 rounded-full bg-secondary-fixed text-on-secondary-fixed shadow-sm text-xs font-bold">
-                  <span className="material-symbols-outlined text-[16px]">favorite</span>
-                  <span>Unlimited Community Craft</span>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Core Interactive Tool Card */}
-          <section id="tool-workspace" className="w-full max-w-[1200px] mx-auto px-margin mb-space-2xl relative z-10">
-            {error && (
-              <div className="mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-sm flex items-center justify-between shadow-sm">
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-rose-600">error</span>
-                  <span>{error}</span>
-                </div>
-                <button onClick={() => setError(null)} className="text-rose-600 hover:text-rose-900 font-bold ml-4">
-                  ✕
-                </button>
-              </div>
-            )}
-
-            <div className="bg-surface-container-lowest rounded-2xl md:rounded-3xl p-6 md:p-10 shadow-xl border border-surface-container-high/60 flex flex-col lg:flex-row gap-8 items-stretch">
-              
-              {/* Left Column: Upload Workspace */}
-              <div className="w-full lg:w-7/12 flex flex-col justify-between">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-tertiary-fixed-dim" />
-                    <span className="text-sm font-bold text-on-surface">Input Canvas</span>
+          <section className="relative w-full overflow-hidden bg-surface-container-low pb-space-2xl pt-space-xl">
+            <div className="absolute -right-24 -top-24 h-96 w-96 rounded-full bg-primary-fixed-dim/30 blur-3xl pointer-events-none" />
+            <div className="absolute left-1/3 bottom-0 h-64 w-64 rounded-full bg-secondary-fixed/40 blur-2xl pointer-events-none" />
+            <div className="max-w-[1200px] mx-auto px-margin relative z-10">
+              <div className="flex flex-col md:flex-row md:items-end justify-between gap-space-lg">
+                <div className="flex flex-col gap-space-xs max-w-2xl">
+                  <div className="inline-flex items-center gap-2 px-space-md py-1 rounded-full bg-surface-container-highest w-fit text-primary font-label-sm text-label-sm">
+                    <span className="material-symbols-outlined text-[16px] text-tertiary">auto_fix_high</span>
+                    <span>Real-time split slider comparisons</span>
                   </div>
-                  <span className="text-xs text-on-surface-variant font-medium">Supports PNG, JPG, WEBP, GIF</span>
+                  <h1 className="font-display-hero text-display-hero text-on-surface tracking-tight">
+                    Crisp clarity, <span className="text-primary underline decoration-secondary-container decoration-wavy decoration-2">pixel by pixel</span>.
+                  </h1>
+                  <p className="font-body-lg text-body-lg text-on-surface-variant pt-space-xs">
+                    Explore community uploads restored with free neural models. Drag the split handles on any card to inspect fine line art, clean dithering, and vintage portrait fidelity.
+                  </p>
                 </div>
 
-                <div
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={handleDrop}
-                  onClick={() => fileInputRef.current?.click()}
-                  className={`relative group cursor-pointer flex-1 min-h-[320px] rounded-2xl p-6 flex flex-col items-center justify-center text-center transition-all duration-300 shadow-inner border-2 border-dashed ${
-                    preview
-                      ? "border-primary/40 bg-surface-container-low"
-                      : "border-slate-300 bg-surface-container-low hover:bg-surface-container-high/60 hover:border-primary/50"
-                  }`}
-                >
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={(e) => e.target.files && handleFile(e.target.files[0])}
-                    accept="image/*"
-                    className="hidden"
-                  />
-
-                  {preview ? (
-                    <div className="flex flex-col items-center">
-                      <img
-                        src={preview}
-                        alt="Input Preview"
-                        className="max-h-56 rounded-xl shadow-md object-contain border border-surface-container-high"
-                      />
-                      <div className="mt-3 text-xs font-semibold text-on-surface">
-                        {file?.name} ({(file?.size / (1024 * 1024)).toFixed(2)} MB)
-                      </div>
-                      <span className="text-xs text-primary font-bold underline mt-1">
-                        Klik atau seret file lain untuk mengganti gambar
-                      </span>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-space-sm bg-surface-container-lowest p-space-sm rounded-lg shadow-sm">
+                  <div className="flex items-center gap-space-sm px-space-xs">
+                    <div className="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-primary font-headline-sm">
+                      <span className="material-symbols-outlined text-[20px]">palette</span>
                     </div>
-                  ) : (
-                    <>
-                      <div className="w-20 h-20 rounded-full bg-surface-container-lowest shadow-md flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                        <span className="material-symbols-outlined text-[38px] text-primary">add_photo_alternate</span>
-                      </div>
-                      <h3 className="text-lg font-bold text-on-surface mb-1">
-                        Drop your image here
-                      </h3>
-                      <p className="text-xs text-on-surface-variant max-w-sm mb-4">
-                        Drag and release or browse from your device. No size compressions.
-                      </p>
-                      <button
-                        type="button"
-                        className="px-6 py-2.5 rounded-full bg-primary text-on-primary text-sm font-semibold shadow-md hover:bg-primary-container active:scale-95 transition-all flex items-center gap-2"
-                      >
-                        <span className="material-symbols-outlined text-[18px]">folder_open</span>
-                        Select Image
-                      </button>
-                    </>
-                  )}
-                </div>
-
-                <div className="mt-4 pt-2">
-                  <span className="text-xs text-on-surface-variant block mb-2 font-bold uppercase tracking-wider">
-                    Info File:
-                  </span>
-                  <div className="flex flex-wrap gap-2 text-xs text-on-surface-variant">
-                    <span className="px-3 py-1 rounded-full bg-surface-container-high">
-                      Format: {file ? file.type.split("/")[1]?.toUpperCase() : "Auto Detect"}
-                    </span>
-                    <span className="px-3 py-1 rounded-full bg-surface-container-high">
-                      Batas Max: 25 MB
-                    </span>
-                    {result && (
-                      <span className="px-3 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-bold">
-                        Kuota Sesi: {result.credits ?? "Ready"}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Right Column: Processing Controls */}
-              <div className="w-full lg:w-5/12 flex flex-col justify-between bg-surface-container-low p-6 rounded-2xl shadow-sm border border-surface-container-high/70">
-                <div className="flex flex-col gap-5">
-                  <div className="flex items-center justify-between pb-1 border-b border-surface-container-high">
-                    <div className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-[20px] text-primary">tune</span>
-                      <h2 className="text-lg font-bold text-on-surface">Bloom Recipe</h2>
-                    </div>
-                    <span className="px-2.5 py-0.5 rounded-full bg-surface-container-lowest text-tertiary text-xs font-bold border border-surface-container-high">
-                      AI Engine Active
-                    </span>
-                  </div>
-
-                  {/* 1. Scale Presets */}
-                  <div className="flex flex-col gap-1.5">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold text-on-surface uppercase tracking-wider">Upscale Target</label>
-                      <span className="text-xs text-primary font-bold">
-                        {scale === "2" ? "2x (Fast Upscale)" : "4x (Ultra HD Resolution)"}
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 bg-surface-container-high p-1.5 rounded-full shadow-inner">
-                      <button
-                        type="button"
-                        onClick={() => setScale("2")}
-                        className={`py-2 px-3 rounded-full text-center text-xs font-bold transition-all ${
-                          scale === "2"
-                            ? "bg-surface-container-lowest text-primary shadow-md"
-                            : "text-on-surface-variant hover:text-on-surface"
-                        }`}
-                      >
-                        2x <span className="text-[10px] block font-normal opacity-80">Quick Sharp</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setScale("4")}
-                        className={`py-2 px-3 rounded-full text-center text-xs font-bold transition-all ${
-                          scale === "4"
-                            ? "bg-surface-container-lowest text-primary shadow-md"
-                            : "text-on-surface-variant hover:text-on-surface"
-                        }`}
-                      >
-                        4x <span className="text-[10px] block font-normal opacity-80">Sweet Spot HD</span>
-                      </button>
+                    <div className="flex flex-col">
+                      <span className="font-label-md text-label-md text-on-surface">Made something cool?</span>
+                      <span className="font-body-sm text-body-sm text-on-surface-variant">Share your favorite upscale</span>
                     </div>
                   </div>
-
-                  {/* 2. Model Specialization */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-on-surface uppercase tracking-wider">Model Specialization</label>
-                    <div className="flex flex-col gap-2">
-                      <label
-                        onClick={() => setModel("anime")}
-                        className={`flex items-center justify-between p-3 rounded-xl bg-surface-container-lowest shadow-sm cursor-pointer border transition-colors ${
-                          model === "anime" ? "border-primary" : "border-surface-container-high hover:bg-surface-container-high/40"
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="material-symbols-outlined text-primary text-[20px]">palette</span>
-                          <div className="flex flex-col text-left">
-                            <span className="text-xs font-bold text-on-surface">Digital Art & Anime</span>
-                            <span className="text-[11px] text-on-surface-variant">Smooth lines & cel-shading recovery</span>
-                          </div>
-                        </div>
-                        <input
-                          type="radio"
-                          name="ai-model"
-                          checked={model === "anime"}
-                          onChange={() => setModel("anime")}
-                          className="accent-primary w-4 h-4 cursor-pointer"
-                        />
-                      </label>
-
-                      <label
-                        onClick={() => setModel("photo")}
-                        className={`flex items-center justify-between p-3 rounded-xl bg-surface-container-lowest shadow-sm cursor-pointer border transition-colors ${
-                          model === "photo" ? "border-primary" : "border-surface-container-high hover:bg-surface-container-high/40"
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="material-symbols-outlined text-secondary text-[20px]">photo_camera</span>
-                          <div className="flex flex-col text-left">
-                            <span className="text-xs font-bold text-on-surface">Photos & Portraits</span>
-                            <span className="text-[11px] text-on-surface-variant">Natural skin tones & textures</span>
-                          </div>
-                        </div>
-                        <input
-                          type="radio"
-                          name="ai-model"
-                          checked={model === "photo"}
-                          onChange={() => setModel("photo")}
-                          className="accent-primary w-4 h-4 cursor-pointer"
-                        />
-                      </label>
-                    </div>
-                  </div>
-
-                  {/* 3. Tactile Sliders */}
-                  <div className="grid grid-cols-2 gap-4 pt-1">
-                    <div>
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-xs font-medium text-on-surface">Denoise</span>
-                        <span className="text-xs text-primary font-bold">{denoise}%</span>
-                      </div>
-                      <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={denoise}
-                        onChange={(e) => setDenoise(e.target.value)}
-                        className="w-full accent-primary bg-surface-container-highest rounded-lg h-2 cursor-pointer"
-                      />
-                    </div>
-                    <div>
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-xs font-medium text-on-surface">Edge Clarity</span>
-                        <span className="text-xs text-primary font-bold">{sharpness}%</span>
-                      </div>
-                      <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={sharpness}
-                        onChange={(e) => setSharpness(e.target.value)}
-                        className="w-full accent-primary bg-surface-container-highest rounded-lg h-2 cursor-pointer"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* 4. Action Button with Status */}
-                <div className="mt-6 pt-4 flex flex-col gap-2">
                   <button
                     type="button"
-                    onClick={handleUpscale}
-                    disabled={loading || !file}
-                    className={`w-full py-3.5 px-6 rounded-full text-on-primary text-sm font-bold shadow-lg transition-all flex items-center justify-center gap-2 ${
-                      loading || !file
-                        ? "bg-slate-400 cursor-not-allowed opacity-80"
-                        : "bg-gradient-to-r from-primary via-primary-container to-secondary-container hover:shadow-xl active:scale-[0.985]"
-                    }`}
+                    onClick={() => setIsModalOpen(true)}
+                    className="px-space-md py-space-sm rounded-full bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md transition-all flex items-center justify-center gap-1 shadow-md hover:scale-[1.02] active:scale-[0.98]"
                   >
-                    {loading ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        <span>Blooming Pixels... ✨</span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="material-symbols-outlined text-[20px]">auto_awesome</span>
-                        <span>Bloom & Upscale ✨</span>
-                      </>
-                    )}
+                    <span className="material-symbols-outlined text-[18px]">upload</span>
+                    <span>Share Upscale</span>
                   </button>
-
-                  <div className="flex items-center justify-center gap-2 text-on-surface-variant text-xs">
-                    <span className="material-symbols-outlined text-[15px] text-tertiary">timer</span>
-                    <span>Estimated render: <strong className="text-on-surface">~2-5 seconds</strong></span>
-                    <span>• No queue</span>
-                  </div>
                 </div>
               </div>
 
-            </div>
-          </section>
-
-          {/* Interactive Before/After Split Comparison Showcase */}
-          <section id="comparison-section" className="w-full max-w-[1200px] mx-auto px-margin mb-space-2xl relative z-10">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-4">
-              <div>
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed text-xs font-bold mb-2">
-                  <span className="material-symbols-outlined text-[14px]">high_quality</span>
-                  Interactive Live Canvas
-                </div>
-                <h2 className="text-2xl md:text-3xl font-extrabold text-on-surface tracking-tight">
-                  Before & After Inspection
-                </h2>
-                <p className="text-sm text-on-surface-variant">
-                  Geser garis pemisah secara horizontal untuk melihat rekonstruksi detail tekstur dan ketajaman piksel.
-                </p>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-2 mt-space-xl overflow-x-auto pb-2 scrollbar-none">
                 <button
                   type="button"
-                  onClick={handleCopy}
-                  className="px-4 py-2 rounded-full bg-surface-container-high hover:bg-surface-container-highest text-on-surface text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm"
+                  onClick={() => setFilter("all")}
+                  className={`filter-btn px-space-md py-space-xs rounded-full font-label-md text-label-md shadow-sm transition-all whitespace-nowrap ${
+                    filter === "all"
+                      ? "bg-on-surface text-surface-container-lowest"
+                      : "bg-surface-container-highest text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
+                  }`}
                 >
-                  <span className="material-symbols-outlined text-[16px]">content_copy</span>
-                  Salin Tautan
+                  All Enhancements
                 </button>
-                <a
-                  href={result ? result.url : sampleDemoAfter}
-                  target="_blank"
-                  rel="noreferrer"
-                  download={result ? result.name : "upscaled.png"}
-                  className="px-5 py-2 rounded-full bg-secondary-container text-on-secondary-container hover:bg-secondary-fixed-dim text-xs font-bold transition-all flex items-center gap-2 shadow-md"
+                <button
+                  type="button"
+                  onClick={() => setFilter("pixel-art")}
+                  className={`filter-btn px-space-md py-space-xs rounded-full font-label-md text-label-md transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                    filter === "pixel-art"
+                      ? "bg-on-surface text-surface-container-lowest"
+                      : "bg-surface-container-highest text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
+                  }`}
                 >
-                  <span className="material-symbols-outlined text-[16px]">download</span>
-                  Download HD PNG
-                </a>
-              </div>
-            </div>
-
-            {/* Split Comparison Frame */}
-            <div className="relative bg-surface-container-lowest rounded-2xl md:rounded-3xl p-4 md:p-6 shadow-xl border border-surface-container-high overflow-hidden select-none">
-              <div
-                ref={sliderRef}
-                onMouseDown={handleMouseDown}
-                onTouchStart={handleTouchStart}
-                className="relative w-full h-[400px] md:h-[560px] rounded-xl overflow-hidden bg-surface-container-low cursor-ew-resize"
-              >
-                {/* Layer 1: The Upscaled (Background) */}
-                <div className="absolute inset-0 w-full h-full">
-                  <img
-                    src={result ? result.url : sampleDemoAfter}
-                    alt="Upscaled Output"
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute top-4 right-4 z-10 px-3 py-1.5 rounded-full bg-surface-container-lowest/90 backdrop-blur-md shadow-md flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-tertiary" />
-                    <span className="text-xs font-extrabold text-on-surface">
-                      {result ? `PixelBloom ${scale}x Result` : "Sample 4x HD (1600 × 1600px)"}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Layer 2: Original Low-Res (Clipped Foreground) */}
-                <div
-                  className="absolute inset-0 top-0 left-0 h-full overflow-hidden"
-                  style={{ width: `${sliderPos}%` }}
+                  <span className="material-symbols-outlined text-[16px]">grid_4x4</span>
+                  Pixel Art &amp; Sprites
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilter("anime")}
+                  className={`filter-btn px-space-md py-space-xs rounded-full font-label-md text-label-md transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                    filter === "anime"
+                      ? "bg-on-surface text-surface-container-lowest"
+                      : "bg-surface-container-highest text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
+                  }`}
                 >
-                  <div className="w-[1200px] max-w-none h-full relative">
-                    <img
-                      src={preview || sampleDemoBefore}
-                      alt="Original Input"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="absolute top-4 left-4 z-10 px-3 py-1.5 rounded-full bg-surface-container-lowest/90 backdrop-blur-md shadow-md flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-secondary" />
-                    <span className="text-xs font-extrabold text-on-surface">
-                      {preview ? "Original Input" : "Sample Low-Res (400 × 400px)"}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Draggable Divider Handle */}
-                <div
-                  className="absolute top-0 bottom-0 z-20 pointer-events-none flex items-center justify-center"
-                  style={{ left: `${sliderPos}%` }}
+                  <span className="material-symbols-outlined text-[16px]">draw</span>
+                  Anime &amp; Illustrations
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilter("vintage")}
+                  className={`filter-btn px-space-md py-space-xs rounded-full font-label-md text-label-md transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                    filter === "vintage"
+                      ? "bg-on-surface text-surface-container-lowest"
+                      : "bg-surface-container-highest text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
+                  }`}
                 >
-                  <div className="w-1 h-full bg-surface-container-lowest shadow-lg" />
-                  <div className="absolute w-10 h-10 rounded-full bg-surface-container-lowest shadow-xl flex items-center justify-center text-primary border-2 border-primary/20 pointer-events-auto cursor-grab active:cursor-grabbing hover:scale-110 transition-transform">
-                    <span className="material-symbols-outlined text-[20px]">drag_indicator</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Info Bar Below Canvas */}
-              <div className="mt-4 px-2 flex flex-col sm:flex-row items-center justify-between gap-3 text-on-surface-variant text-xs font-medium">
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-bold text-on-surface">Input:</span>
-                    <span>{file ? file.name : "400 × 400px JPEG"}</span>
-                  </div>
-                  <span className="text-outline-variant">➔</span>
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-bold text-primary">Output:</span>
-                    <span className="text-on-surface font-semibold">
-                      {result ? result.name : "High-Clarity Lossless PNG"}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <span className="inline-flex items-center gap-1 text-tertiary font-bold">
-                    <span className="material-symbols-outlined text-[16px]">check_circle</span>
-                    {result ? "Berhasil Diproses" : "Interactive Demo Ready"}
-                  </span>
-                  <span className="text-outline-variant">•</span>
-                  <button
-                    type="button"
-                    onClick={handleReset}
-                    className="text-primary hover:underline font-bold"
-                  >
-                    Reset Gambar
-                  </button>
-                </div>
+                  <span className="material-symbols-outlined text-[16px]">history_edu</span>
+                  Vintage Photos
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilter("nature")}
+                  className={`filter-btn px-space-md py-space-xs rounded-full font-label-md text-label-md transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                    filter === "nature"
+                      ? "bg-on-surface text-surface-container-lowest"
+                      : "bg-surface-container-highest text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-[16px]">landscape</span>
+                  Nature &amp; Wallpapers
+                </button>
               </div>
             </div>
           </section>
 
-          {/* Features Highlight */}
-          <section id="features" className="w-full max-w-[1200px] mx-auto px-margin mb-space-2xl relative z-10">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-surface-container-lowest rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow border border-surface-container-high/60 flex flex-col justify-between">
-                <div>
-                  <div className="w-12 h-12 rounded-full bg-primary-fixed flex items-center justify-center text-primary mb-4">
-                    <span className="material-symbols-outlined text-[24px]">key_off</span>
-                  </div>
-                  <h3 className="text-lg font-bold text-on-surface mb-2">Zero account required</h3>
-                  <p className="text-sm text-on-surface-variant leading-relaxed">
-                    No emails, no subscriptions, and zero credits countdown. Just open this tab anytime you are making pixel art, printing stickers, or retouching pictures.
-                  </p>
-                </div>
-                <div className="mt-4 pt-2 text-primary text-xs font-bold flex items-center gap-1">
-                  Open web standard <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
-                </div>
+          <section id="how-it-works" className="max-w-[1200px] mx-auto px-margin py-space-2xl w-full">
+            <div className="flex items-center justify-between mb-space-lg">
+              <div className="flex items-center gap-space-sm text-on-surface-variant font-label-md text-label-md">
+                <span className="inline-block w-2.5 h-2.5 rounded-full bg-tertiary-container animate-pulse" />
+                <span>Showing {filteredItems.length} showcase transformation{filteredItems.length === 1 ? "" : "s"}</span>
               </div>
+              <div className="flex items-center gap-space-xs text-on-surface-variant font-body-sm text-body-sm">
+                <span className="material-symbols-outlined text-[16px]">swipe</span>
+                <span>Drag center handle horizontally</span>
+              </div>
+            </div>
 
-              <div className="bg-surface-container-lowest rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow border border-surface-container-high/60 flex flex-col justify-between">
-                <div>
-                  <div className="w-12 h-12 rounded-full bg-tertiary-fixed flex items-center justify-center text-tertiary mb-4">
-                    <span className="material-symbols-outlined text-[24px]">verified_user</span>
-                  </div>
-                  <h3 className="text-lg font-bold text-on-surface mb-2">Privacy first & auto-purge</h3>
-                  <p className="text-sm text-on-surface-variant leading-relaxed">
-                    Your images are processed in a temporary memory buffer and purged completely after processing. Your creations are never stored or used for retraining.
-                  </p>
-                </div>
-                <div className="mt-4 pt-2 text-tertiary text-xs font-bold flex items-center gap-1">
-                  Ephemeral storage by default <span className="material-symbols-outlined text-[16px]">lock</span>
-                </div>
-              </div>
-
-              <div className="bg-surface-container-lowest rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow border border-surface-container-high/60 flex flex-col justify-between">
-                <div>
-                  <div className="w-12 h-12 rounded-full bg-secondary-fixed flex items-center justify-center text-secondary mb-4">
-                    <span className="material-symbols-outlined text-[24px]">code_blocks</span>
-                  </div>
-                  <h3 className="text-lg font-bold text-on-surface mb-2">Integrated Edge Backend</h3>
-                  <p className="text-sm text-on-surface-variant leading-relaxed">
-                    Powered by high performance upscaler engines and serverless Vercel function endpoints for seamless and reliable scaling.
-                  </p>
-                </div>
-                <div className="mt-4 pt-2 text-secondary text-xs font-bold flex items-center gap-1">
-                  View architecture specs <span className="material-symbols-outlined text-[16px]">open_in_new</span>
-                </div>
-              </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-space-xl" id="gallery-grid">
+              {filteredItems.map((item) => (
+                <SplitComparisonCard key={item.id} item={item} />
+              ))}
             </div>
           </section>
 
-          {/* Tip Jar / Coffee Section */}
-          <section id="tip-jar" className="w-full max-w-[1200px] mx-auto px-margin mb-space-2xl relative z-10">
-            <div className="bg-surface-container-low rounded-3xl p-6 md:p-10 shadow-lg border border-surface-container-high flex flex-col lg:flex-row items-center justify-between gap-8">
-              <div className="flex-1 max-w-xl">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="material-symbols-outlined text-secondary text-[24px]">local_cafe</span>
-                  <span className="text-xs text-secondary font-bold uppercase tracking-wider">A cozy note from Alex</span>
-                </div>
-                <h2 className="text-2xl md:text-3xl font-extrabold text-on-surface tracking-tight mb-3">
-                  Why I built PixelBloom on my spare weekends
+          <section className="max-w-[1200px] mx-auto px-margin pb-space-2xl w-full">
+            <div className="bg-gradient-to-r from-primary-fixed to-secondary-fixed/50 p-space-xl rounded-lg flex flex-col md:flex-row items-center justify-between gap-space-lg shadow-sm">
+              <div className="flex flex-col gap-space-xs max-w-xl text-center md:text-left">
+                <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-primary-fixed font-bold">
+                  Community Showcase Pool
+                </span>
+                <h2 className="font-headline-lg text-headline-lg text-on-primary-fixed font-bold">
+                  Got an unbelievable upscale result?
                 </h2>
-                <p className="text-sm text-on-surface-variant mb-2 leading-relaxed">
-                  PixelBloom is designed for indie developers, digital illustrators, and creators who need fast, uncompromised upscaling without expensive monthly subscriptions.
-                </p>
-                <p className="text-sm text-on-surface-variant leading-relaxed">
-                  If this saved you time today, consider tossing a warm beverage into the server tip jar to keep this tool fast, ad-free, and accessible for everyone!
+                <p className="font-body-md text-body-md text-on-primary-fixed-variant">
+                  Drop your before-and-after in our open showcase! We celebrate weird, beautiful, and hyper-detailed transformations made with PixelBloom.
                 </p>
               </div>
+              <div className="flex flex-wrap items-center justify-center gap-space-sm">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(true)}
+                  className="px-space-lg py-space-md rounded-full bg-primary hover:bg-primary-container text-on-primary font-label-lg text-label-lg shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2"
+                >
+                  <span className="material-symbols-outlined text-[20px]">add_photo_alternate</span>
+                  <span>Submit Before &amp; After</span>
+                </button>
+              </div>
+            </div>
+          </section>
 
-              {/* Interactive Tip Jar Card */}
-              <div className="w-full lg:w-96 bg-surface-container-lowest rounded-2xl p-6 shadow-md border border-surface-container-high/60 flex flex-col gap-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-base font-bold text-on-surface">Server Tip Jar</span>
-                  <span className="px-2.5 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed text-xs font-bold">
-                    GPU Fund: 88%
-                  </span>
+          <section id="tip-jar" className="max-w-[1200px] mx-auto px-margin pb-space-xl w-full">
+            <div className="bg-surface-container-lowest p-space-xl rounded-lg shadow-sm flex flex-col lg:flex-row gap-space-xl items-center justify-between">
+              <div className="flex items-start gap-space-md max-w-xl">
+                <div className="relative shrink-0">
+                  <img
+                    alt="Alex - PixelBloom Creator"
+                    className="w-14 h-14 rounded-full object-cover shadow-sm ring-2 ring-primary/20"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuBym9uL7LgnB_0Jr5_Yb0xwjN2cR-7oQvltMUYpH6jyBQzGACUPsnUHTF40odAyACC5xOP9zGs8mWw_8-r_tXZW1E9t8JlrcAx4Z4X74xTmbI8mTA2VzpmLrHFDlA-SzexNTLBX5ojlMi0-v_2mHE7FTEiJK6HLCbgcgvnMUZiLj3E1t6SdMIEdgYmfLQsVz6mRoUd8JYGvg5NGRdOjDamlznnvJdtPLK9a-nu-pvOU5fINmkqNUjq9"
+                  />
+                  <span className="absolute -bottom-1 -right-1 text-base">☕</span>
                 </div>
-
-                <div>
-                  <div className="flex justify-between text-xs text-on-surface-variant mb-1.5 font-medium">
-                    <span>Monthly cloud bill: $42 / $48</span>
-                    <span>Almost covered!</span>
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-headline-sm text-headline-sm text-on-surface font-bold">
+                      A friendly note from Alex
+                    </h4>
+                    <span className="font-label-sm text-label-sm bg-tertiary-fixed text-on-tertiary-fixed px-2 py-0.5 rounded-full">
+                      Indie Craft
+                    </span>
                   </div>
-                  <div className="w-full h-2.5 rounded-full bg-surface-container-high overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-secondary-container to-secondary rounded-full w-[88%]" />
+                  <p className="font-body-md text-body-md text-on-surface-variant">
+                    PixelBloom runs on a mix of WebGPU client pipelines and hobbyist GPU nodes so artists and game devs don't have to deal with paywalls or subscription traps. If it saved you some rework time, consider buying a warm tea!
+                  </p>
+                  <div className="flex items-center gap-space-sm pt-space-xs text-on-surface-variant font-label-sm text-label-sm">
+                    <span>Powered by open weights:</span>
+                    <span className="underline hover:text-primary cursor-pointer">RealESRGAN</span> •
+                    <span className="underline hover:text-primary cursor-pointer">OmniPixel</span> •
+                    <span className="underline hover:text-primary cursor-pointer">GFPGAN</span>
                   </div>
                 </div>
+              </div>
 
-                <div className="flex items-center justify-between gap-2">
-                  {["$3 ☕", "$5 🍵", "$10 🍰", "Custom"].map((item) => (
+              <div className="w-full lg:w-auto bg-surface-container-low p-space-md rounded-lg flex flex-col sm:flex-row items-center gap-space-md shrink-0">
+                <div className="flex flex-col text-center sm:text-left">
+                  <span className="font-label-md text-label-md text-on-surface font-bold">Fuel the GPU Cluster</span>
+                  <span className="font-body-sm text-body-sm text-on-surface-variant">Keeps upscalers free for all</span>
+                </div>
+                <div className="flex items-center gap-1.5 bg-surface-container-lowest p-1 rounded-full shadow-inner">
+                  {[3, 5, 10].map((amt) => (
                     <button
-                      key={item}
+                      key={amt}
                       type="button"
-                      onClick={() => setSelectedTip(item)}
-                      className={`flex-1 py-2 rounded-full text-xs font-bold transition-all text-center ${
-                        selectedTip === item
-                          ? "bg-secondary-fixed text-on-secondary-fixed shadow-sm"
-                          : "bg-surface-container-high hover:bg-secondary-fixed/50 text-on-surface"
+                      onClick={() => setSelectedTip(amt)}
+                      className={`tip-btn px-3 py-1 rounded-full font-label-sm text-label-sm transition-all ${
+                        selectedTip === amt
+                          ? "bg-secondary-container text-on-secondary-container shadow-sm"
+                          : "text-on-surface hover:bg-secondary-fixed hover:text-on-secondary-fixed"
                       }`}
                     >
-                      {item}
+                      ${amt}
                     </button>
                   ))}
                 </div>
-
                 <button
                   type="button"
-                  onClick={() => alert(`Terima kasih atas dukungannya (${selectedTip})!`)}
-                  className="w-full py-3 px-4 rounded-full bg-secondary text-on-secondary hover:bg-on-secondary-container text-xs font-bold shadow-md hover:shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
+                  onClick={handleSendCoffee}
+                  className={`w-full sm:w-auto px-space-md py-space-sm rounded-full font-label-md text-label-md transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95 ${
+                    tipSuccess
+                      ? "bg-tertiary-fixed text-on-tertiary-fixed"
+                      : "bg-secondary-fixed text-on-secondary-fixed hover:bg-secondary-container hover:text-on-secondary-container"
+                  }`}
                 >
-                  <span className="material-symbols-outlined text-[18px]">volunteer_activism</span>
-                  Send a Warm Coffee ({selectedTip})
+                  <span className="material-symbols-outlined text-[18px]">
+                    {tipSuccess ? "favorite" : "local_cafe"}
+                  </span>
+                  <span>{tipSuccess ? "Thanks so much!" : "Send Matcha"}</span>
                 </button>
-                <span className="text-center text-[11px] text-on-surface-variant">
-                  Processed via secure Stripe • zero recurring fees
-                </span>
               </div>
             </div>
           </section>
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="w-full bg-surface-container-low py-10 mt-12 border-t border-surface-container-high">
-        <div className="max-w-[1200px] mx-auto px-margin flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center justify-center md:justify-start gap-2">
-              <span className="text-lg font-bold text-on-surface">PixelBloom</span>
-              <span className="text-xs bg-tertiary-fixed text-on-tertiary-fixed px-2 py-0.5 rounded-full font-bold">
-                Rega Digital Alliance
+      <footer className="w-full bg-surface-container-low py-space-xl mt-space-2xl shadow-[0_-1px_6px_rgba(0,0,0,0.02)]">
+        <div className="max-w-[1200px] mx-auto px-margin flex flex-col md:flex-row items-center justify-between gap-space-lg text-center md:text-left">
+          <div className="flex flex-col gap-space-xs">
+            <div className="flex items-center justify-center md:justify-start gap-space-xs">
+              <span className="font-headline-sm text-headline-sm text-on-surface font-bold">PixelBloom</span>
+              <span className="font-label-sm text-label-sm bg-tertiary-fixed text-on-tertiary-fixed px-2 py-0.5 rounded-full">
+                v1.0 open craft
               </span>
             </div>
-            <p className="text-xs text-on-surface-variant max-w-sm">
-              Handmade with care for indie artists, illustrators, and cozy pixel curators. No paywalls, no tracking cookies.
+            <p className="font-body-sm text-body-sm text-on-surface-variant max-w-sm">
+              Handmade with care for indie artists, illustrators, and cozy pixel curators. No paywalls, no tracking cookies, just friendly pixels.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-3">
+          <div className="flex flex-wrap items-center justify-center gap-space-md">
             <a
+              className="inline-flex items-center gap-space-xs px-space-md py-space-sm rounded-full bg-surface-container-lowest font-label-md text-label-md text-on-surface shadow-[0_1px_3px_0_rgba(31,41,55,0.04)] hover:bg-surface-container-high hover:text-on-surface transition-all"
               href="https://github.com"
+              rel="noopener noreferrer"
               target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-surface-container-lowest text-xs font-bold text-on-surface shadow-sm hover:bg-surface-container-high transition-all border border-surface-container-high"
             >
-              <span className="material-symbols-outlined text-[16px]">code</span>
+              <span className="material-symbols-outlined text-[18px]">code</span>
               GitHub Repository
             </a>
             <a
+              className="inline-flex items-center gap-space-xs px-space-md py-space-sm rounded-full bg-secondary-fixed text-on-secondary-fixed font-label-md text-label-md shadow-[0_2px_8px_rgba(31,41,55,0.08)] hover:bg-secondary-container hover:text-on-secondary-container transition-all"
               href="#tip-jar"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-secondary-fixed text-on-secondary-fixed text-xs font-bold shadow-sm hover:bg-secondary-container hover:text-on-secondary-container transition-all"
             >
-              <span className="material-symbols-outlined text-[16px]">local_cafe</span>
-              Support Project
+              <span className="material-symbols-outlined text-[18px]">local_cafe</span>
+              Support the Project
             </a>
           </div>
         </div>
 
-        <div className="max-w-[1200px] mx-auto px-margin pt-6 mt-6 border-t border-surface-container-high/60 text-center text-xs text-on-surface-variant flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>© 2026 PixelBloom by Rega Digital Alliance.</span>
+        <div className="max-w-[1200px] mx-auto px-margin pt-space-lg mt-space-lg text-center font-body-sm text-body-sm text-on-surface-variant flex flex-col sm:flex-row items-center justify-between gap-space-sm">
+          <span>© 2026 PixelBloom by Rega Digital Alliance. An indie labor of love.</span>
           <span className="inline-flex items-center gap-1">
-            Built with <span className="material-symbols-outlined text-[14px] text-rose-500">favorite</span> for creators everywhere
+            Built with <span className="material-symbols-outlined text-[16px] text-error">favorite</span> for everyday creators
           </span>
         </div>
       </footer>
+
+      {isModalOpen && (
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsModalOpen(false);
+          }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-on-surface/40 backdrop-blur-sm transition-opacity duration-200"
+        >
+          <div className="bg-surface-container-lowest rounded-lg p-space-xl max-w-lg w-full mx-margin shadow-2xl transition-transform duration-200">
+            <div className="flex items-center justify-between pb-space-sm">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center text-primary">
+                  <span className="material-symbols-outlined text-[18px]">add_photo_alternate</span>
+                </div>
+                <h3 className="font-headline-sm text-headline-sm text-on-surface font-bold">
+                  Share Your Transformation
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="w-8 h-8 rounded-full hover:bg-surface-container-high flex items-center justify-center text-on-surface-variant"
+              >
+                <span className="material-symbols-outlined text-[20px]">close</span>
+              </button>
+            </div>
+
+            <p className="font-body-sm text-body-sm text-on-surface-variant pb-space-md">
+              Unggah gambar untuk di-upscale secara langsung menggunakan engine AI Vercel backend dan tampilkan perbandingannya.
+            </p>
+
+            {uploadError && (
+              <div className="mb-4 p-3 rounded-lg bg-error-container text-on-error-container text-xs font-semibold">
+                {uploadError}
+              </div>
+            )}
+
+            <form onSubmit={handleModalSubmit} className="flex flex-col gap-space-md">
+              <div
+                onClick={() => modalFileInputRef.current?.click()}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (e.dataTransfer.files?.[0]) handleFileSelection(e.dataTransfer.files[0]);
+                }}
+                className="border-2 border-dashed border-outline-variant hover:border-primary rounded-lg p-space-lg flex flex-col items-center justify-center text-center gap-2 cursor-pointer bg-surface-container-low/50 hover:bg-surface-container-low transition-all"
+              >
+                <input
+                  type="file"
+                  ref={modalFileInputRef}
+                  onChange={(e) => e.target.files?.[0] && handleFileSelection(e.target.files[0])}
+                  accept="image/*"
+                  className="hidden"
+                />
+                {uploadPreview ? (
+                  <div className="flex flex-col items-center">
+                    <img
+                      src={uploadPreview}
+                      alt="Upload Preview"
+                      className="max-h-40 rounded-lg object-contain shadow-sm"
+                    />
+                    <span className="font-label-sm text-label-sm text-primary font-bold mt-2">
+                      {uploadFile?.name} (Klik untuk mengganti)
+                    </span>
+                  </div>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-[36px] text-primary">cloud_upload</span>
+                    <span className="font-label-md text-label-md text-on-surface font-semibold">
+                      Drag &amp; drop file gambar atau telusuri
+                    </span>
+                    <span className="font-body-sm text-body-sm text-on-surface-variant">
+                      PNG, JPG, WebP hingga 25MB
+                    </span>
+                  </>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="font-label-sm text-label-sm text-on-surface font-bold">Skala Perbesaran</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setScale("2")}
+                    className={`py-2 px-3 rounded-full text-xs font-bold transition-all ${
+                      scale === "2"
+                        ? "bg-primary text-on-primary shadow-sm"
+                        : "bg-surface-container-high text-on-surface-variant hover:text-on-surface"
+                    }`}
+                  >
+                    2x Fast Scale
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setScale("4")}
+                    className={`py-2 px-3 rounded-full text-xs font-bold transition-all ${
+                      scale === "4"
+                        ? "bg-primary text-on-primary shadow-sm"
+                        : "bg-surface-container-high text-on-surface-variant hover:text-on-surface"
+                    }`}
+                  >
+                    4x Ultra HD
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="font-label-sm text-label-sm text-on-surface font-bold">
+                  Transformation Title &amp; Model
+                </label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g. 1996 SNES Sprite 4x Upscale"
+                  className="w-full px-space-md py-space-sm rounded-full bg-surface-container-low text-on-surface font-body-sm text-body-sm outline-none focus:ring-2 focus:ring-primary border border-surface-container-high"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="font-label-sm text-label-sm text-on-surface font-bold">Your Artist Handle</label>
+                <input
+                  type="text"
+                  value={artistHandle}
+                  onChange={(e) => setArtistHandle(e.target.value)}
+                  placeholder="@yourname on X/Bluesky"
+                  className="w-full px-space-md py-space-sm rounded-full bg-surface-container-low text-on-surface font-body-sm text-body-sm outline-none focus:ring-2 focus:ring-primary border border-surface-container-high"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-space-sm pt-space-sm">
+                <button
+                  type="button"
+                  disabled={isUploading}
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-space-md py-space-sm rounded-full font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isUploading || !uploadFile}
+                  className={`px-space-lg py-space-sm rounded-full text-on-primary font-label-md text-label-md shadow-md transition-all flex items-center gap-2 ${
+                    isUploading || !uploadFile
+                      ? "bg-primary/50 cursor-not-allowed"
+                      : "bg-primary hover:bg-primary-container active:scale-95"
+                  }`}
+                >
+                  {isUploading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>Processing AI...</span>
+                    </>
+                  ) : (
+                    <span>Submit for Showcase ✨</span>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
